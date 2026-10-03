@@ -4,15 +4,15 @@
 
 # LiveCaptions Translator
 
-<a href="https://trendshift.io/repositories/14278" target="_blank"><img src="https://trendshift.io/api/badge/repositories/14278" alt="SakiRinn%2FLiveCaptions-Translator | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
-
 ### *Real-time audio/speech translation tool based on Windows LiveCaptions*
 
-[![Master Build](https://github.com/SakiRinn/LiveCaptions-Translator/actions/workflows/dotnet-build.yml/badge.svg?branch=master)](https://github.com/SakiRinn/LiveCaptions-Translator/actions/workflows/dotnet-build.yml)
-[![GitHub Release](https://img.shields.io/github/v/release/SakiRinn/LiveCaptions-Translator?label=Latest&color=yellow)](https://github.com/SakiRinn/LiveCaptions-Translator/releases/latest)
+**A fork maintained by [Xiaoyiyi23](https://github.com/Xiaoyiyi23)**, based on [SakiRinn/LiveCaptions-Translator](https://github.com/SakiRinn/LiveCaptions-Translator) — see [What's new in this fork](#whats-new-in-this-fork).
+
+[![Master Build](https://github.com/Xiaoyiyi23/LiveCaptions-Translator/actions/workflows/dotnet-build.yml/badge.svg?branch=master)](https://github.com/Xiaoyiyi23/LiveCaptions-Translator/actions/workflows/dotnet-build.yml)
+[![GitHub Release](https://img.shields.io/github/v/release/Xiaoyiyi23/LiveCaptions-Translator?label=Latest&color=yellow)](https://github.com/Xiaoyiyi23/LiveCaptions-Translator/releases/latest)
 [![Windows 11](https://img.shields.io/badge/platform-Windows11-blue?logo=windows11&style=&color=1E9BFA)](https://www.microsoft.com/en-us/software-download/windows11)
-[![GitHub License](https://img.shields.io/github/license/SakiRinn/LiveCaptions-Translator)](https://github.com/SakiRinn/LiveCaptions-Translator/blob/master/LICENSE)
-[![GitHub Stars](https://img.shields.io/github/stars/SakiRinn/LiveCaptions-Translator)](https://github.com/SakiRinn/LiveCaptions-Translator/stargazers)
+[![GitHub License](https://img.shields.io/github/license/Xiaoyiyi23/LiveCaptions-Translator)](https://github.com/Xiaoyiyi23/LiveCaptions-Translator/blob/master/LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/Xiaoyiyi23/LiveCaptions-Translator)](https://github.com/Xiaoyiyi23/LiveCaptions-Translator/stargazers)
 
 **English** | [中文](README_zh-CN.md)
 
@@ -199,9 +199,25 @@ After launching Windows LiveCaptions, click the **⚙️ gear** icon to open the
 
 After configuration, close Windows LiveCaptions and launch LiveCaptions Translator to start using it! 🎉
 
-## Project Stats
+## What's new in this fork
 
-### Activity
+This repository is our maintained edition of LiveCaptions Translator. On top of the original project it adds:
+
+- **🌐 Multi-language UI** — English and 简体中文, following the system language by default and switchable at runtime in the settings.
+- **🗃️ Tray residency** — closing the main window minimizes it to the system tray while translation, history logging and the overlay window keep running; with autostart and single-instance activation.
+- **🎬 SRT export** — export the translation history as CSV *or* SRT subtitles.
+- **🛠️ Robustness & security hardening** — thread-safe pipeline, debounced settings persistence, API keys encrypted at rest with Windows DPAPI, and file logging for background diagnosis.
+- **✅ Test foundation** — 31 unit tests covering sentence segmentation, text utilities, secret protection and localization.
+
+## Credits & License
+
+This project is a fork of [SakiRinn/LiveCaptions-Translator](https://github.com/SakiRinn/LiveCaptions-Translator) — all credit for the original idea and implementation goes to [SakiRinn](https://github.com/SakiRinn) and the project's [contributors](https://github.com/SakiRinn/LiveCaptions-Translator/graphs/contributors).
+
+<div align="center">
+  <a href="https://trendshift.io/repositories/14278" target="_blank"><img src="https://trendshift.io/api/badge/repositories/14278" alt="SakiRinn%2FLiveCaptions-Translator | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
+</div>
+
+### Original project activity
 
 <div align="center">
   <img src="https://img.shields.io/github/issues/SakiRinn/LiveCaptions-Translator?style=for-the-badge&label=Issues&color=yellow" alt="GitHub Issues">
@@ -210,7 +226,7 @@ After configuration, close Windows LiveCaptions and launch LiveCaptions Translat
   <img src="https://img.shields.io/github/last-commit/SakiRinn/LiveCaptions-Translator?style=for-the-badge&label=Last%20Commit&color=purple" alt="GitHub Last Commit">
 </div>
 
-### Contributors
+### Original project contributors
 
 <div align="center">
   <img src="https://img.shields.io/github/contributors/SakiRinn/LiveCaptions-Translator?style=for-the-badge&label=Contributors&color=success" alt="GitHub Contributors">
@@ -220,6 +236,12 @@ After configuration, close Windows LiveCaptions and launch LiveCaptions Translat
   </a>
 </div>
 
-### Star History
+### Original project star history
 
 [![Stargazers over time](https://starchart.cc/SakiRinn/LiveCaptions-Translator.svg?variant=adaptive)](https://starchart.cc/SakiRinn/LiveCaptions-Translator)
+
+### License
+
+This project inherits the **Apache License 2.0** from the original project.
+
+Copyright (c) 2024 SakiRinn and other contributors. Licensed under the [Apache License, Version 2.0](LICENSE); you may not use these files except in compliance with the License. See the [LICENSE](LICENSE) file for the full terms.

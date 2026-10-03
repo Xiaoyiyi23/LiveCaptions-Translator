@@ -4,15 +4,15 @@
 
 # LiveCaptions Translator
 
-<a href="https://trendshift.io/repositories/14278" target="_blank"><img src="https://trendshift.io/api/badge/repositories/14278" alt="SakiRinn%2FLiveCaptions-Translator | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
-
 ### *基于Windows实时字幕的实时音频/语音翻译工具*
 
-[![Master Build](https://github.com/SakiRinn/LiveCaptions-Translator/actions/workflows/dotnet-build.yml/badge.svg?branch=master)](https://github.com/SakiRinn/LiveCaptions-Translator/actions/workflows/dotnet-build.yml)
-[![GitHub Release](https://img.shields.io/github/v/release/SakiRinn/LiveCaptions-Translator?label=Latest&color=yellow)](https://github.com/SakiRinn/LiveCaptions-Translator/releases/latest)
+**由 [Xiaoyiyi23](https://github.com/Xiaoyiyi23) 维护的分支**，基于 [SakiRinn/LiveCaptions-Translator](https://github.com/SakiRinn/LiveCaptions-Translator) 增强——[查看本分支的新特性](#本分支的新特性)。
+
+[![Master Build](https://github.com/Xiaoyiyi23/LiveCaptions-Translator/actions/workflows/dotnet-build.yml/badge.svg?branch=master)](https://github.com/Xiaoyiyi23/LiveCaptions-Translator/actions/workflows/dotnet-build.yml)
+[![GitHub Release](https://img.shields.io/github/v/release/Xiaoyiyi23/LiveCaptions-Translator?label=Latest&color=yellow)](https://github.com/Xiaoyiyi23/LiveCaptions-Translator/releases/latest)
 [![Windows 11](https://img.shields.io/badge/platform-Windows11-blue?logo=windows11&style=&color=1E9BFA)](https://www.microsoft.com/en-us/software-download/windows11)
-[![GitHub License](https://img.shields.io/github/license/SakiRinn/LiveCaptions-Translator)](https://github.com/SakiRinn/LiveCaptions-Translator/blob/master/LICENSE)
-[![GitHub Stars](https://img.shields.io/github/stars/SakiRinn/LiveCaptions-Translator)](https://github.com/SakiRinn/LiveCaptions-Translator/stargazers)
+[![GitHub License](https://img.shields.io/github/license/Xiaoyiyi23/LiveCaptions-Translator)](https://github.com/Xiaoyiyi23/LiveCaptions-Translator/blob/master/LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/Xiaoyiyi23/LiveCaptions-Translator)](https://github.com/Xiaoyiyi23/LiveCaptions-Translator/stargazers)
 
 [English](README.md) | **中文**
 
@@ -199,9 +199,25 @@ Windows内置的实时字幕简单易用，资源占用少，且识别准确率�
 
 配置完成后，关闭Windows实时字幕然后开始使用LiveCaptions Translator吧！🎉
 
-## 项目统计
+## 本分支的新特性
 
-### 活动
+本仓库是我们维护的 LiveCaptions Translator 版本，在原项目基础上增加了：
+
+- **🌐 多语言界面** —— 支持英文与简体中文，默认跟随系统语言，可在设置页实时切换。
+- **🗃️ 托盘常驻** —— 关闭主窗口即最小化到系统托盘，翻译、历史记录与悬浮字幕窗继续工作；支持开机自启与单实例。
+- **🎬 SRT 导出** —— 历史记录可导出为 CSV 或 SRT 字幕文件。
+- **🛠️ 健壮性与安全加固** —— 线程安全的处理流水线、设置防抖落盘、API 密钥使用 Windows DPAPI 加密存储、后台文件日志。
+- **✅ 测试基建** —— 31 个单元测试，覆盖断句、文本工具、密钥保护与本地化。
+
+## 致谢与许可
+
+本项目是 [SakiRinn/LiveCaptions-Translator](https://github.com/SakiRinn/LiveCaptions-Translator) 的分支（fork）——原始创意与实现的全部荣誉属于 [SakiRinn](https://github.com/SakiRinn) 及原项目的[贡献者](https://github.com/SakiRinn/LiveCaptions-Translator/graphs/contributors)。
+
+<div align="center">
+  <a href="https://trendshift.io/repositories/14278" target="_blank"><img src="https://trendshift.io/api/badge/repositories/14278" alt="SakiRinn%2FLiveCaptions-Translator | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
+</div>
+
+### 原项目活动
 
 <div align="center">
   <img src="https://img.shields.io/github/issues/SakiRinn/LiveCaptions-Translator?style=for-the-badge&label=Issues&color=yellow" alt="GitHub Issues">
@@ -210,7 +226,7 @@ Windows内置的实时字幕简单易用，资源占用少，且识别准确率�
   <img src="https://img.shields.io/github/last-commit/SakiRinn/LiveCaptions-Translator?style=for-the-badge&label=Last%20Commit&color=purple" alt="GitHub Last Commit">
 </div>
 
-### 贡献者
+### 原项目贡献者
 
 <div align="center">
   <img src="https://img.shields.io/github/contributors/SakiRinn/LiveCaptions-Translator?style=for-the-badge&label=Contributors&color=success" alt="GitHub Contributors">
@@ -220,6 +236,12 @@ Windows内置的实时字幕简单易用，资源占用少，且识别准确率�
   </a>
 </div>
 
-### Star历史
+### 原项目Star历史
 
 [![Stargazers over time](https://starchart.cc/SakiRinn/LiveCaptions-Translator.svg?variant=adaptive)](https://starchart.cc/SakiRinn/LiveCaptions-Translator)
+
+### 许可证
+
+本项目沿用原项目的 **Apache License 2.0** 许可证。
+
+Copyright (c) 2024 SakiRinn 及其他贡献者。依据 [Apache License, Version 2.0](LICENSE) 授权；除非遵守许可证，否则不得使用这些文件。完整条款见 [LICENSE](LICENSE) 文件。
