@@ -19,6 +19,7 @@ namespace LiveCaptionsTranslator
         {
             InitializeComponent();
             ApplicationThemeManager.ApplySystemTheme();
+            Translator.LogOnlyFlagChanged += SyncPauseButtonIcon;
 
             Loaded += (s, e) =>
             {
@@ -56,11 +57,21 @@ namespace LiveCaptionsTranslator
             var button = sender as Button;
             var symbolIcon = button?.Icon as SymbolIcon;
 
+            ToggleOverlay();
+
+            if (symbolIcon != null)
+            {
+                bool overlayOpen = OverlayWindow != null;
+                symbolIcon.Symbol = overlayOpen ? SymbolRegular.ClosedCaption24 : SymbolRegular.ClosedCaptionOff24;
+                symbolIcon.Filled = overlayOpen;
+            }
+        }
+
+        // Opens/closes the overlay window; also used by the tray menu.
+        public void ToggleOverlay()
+        {
             if (OverlayWindow == null)
             {
-                symbolIcon.Symbol = SymbolRegular.ClosedCaption24;
-                symbolIcon.Filled = true;
-
                 OverlayWindow = new OverlayWindow();
                 OverlayWindow.SizeChanged +=
                     (s, e) => WindowHandler.SaveState(OverlayWindow, Translator.Setting);
@@ -84,9 +95,6 @@ namespace LiveCaptionsTranslator
             }
             else
             {
-                symbolIcon.Symbol = SymbolRegular.ClosedCaptionOff24;
-                symbolIcon.Filled = false;
-
                 switch (OverlayWindow.OnlyMode)
                 {
                     case CaptionVisible.TranslationOnly:
@@ -105,21 +113,14 @@ namespace LiveCaptionsTranslator
 
         private void LogOnlyButton_Click(object sender, RoutedEventArgs e)
         {
-            var button = sender as Button;
-            var symbolIcon = button?.Icon as SymbolIcon;
-
-            if (Translator.LogOnlyFlag)
-            {
-                Translator.LogOnlyFlag = false;
-                symbolIcon.Filled = false;
-            }
-            else
-            {
-                Translator.LogOnlyFlag = true;
-                symbolIcon.Filled = true;
-            }
-
+            Translator.LogOnlyFlag = !Translator.LogOnlyFlag;
             Translator.ClearContexts();
+        }
+
+        private void SyncPauseButtonIcon()
+        {
+            if (LogOnlyButton.Icon is SymbolIcon symbolIcon)
+                symbolIcon.Filled = Translator.LogOnlyFlag;
         }
 
         private void CaptionLogButton_Click(object sender, RoutedEventArgs e)
@@ -180,9 +181,8 @@ namespace LiveCaptionsTranslator
             }
             catch (Exception ex)
             {
-                SnackbarHost.Show("[ERROR] Update Check Failed.", ex.Message, SnackbarType.Error,
-                    timeout: 2, closeButton: true);
-
+                // Update check is non-critical; stay silent for offline users.
+                FileLogger.Info($"Update check failed: {ex.Message}");
                 return;
             }
 
@@ -194,12 +194,11 @@ namespace LiveCaptionsTranslator
             {
                 var dialog = new Wpf.Ui.Controls.MessageBox
                 {
-                    Title = "New Version Available",
-                    Content = $"A new version has been detected: {latestVersion}\n" +
-                              $"Current version: {currentVersion}\n" +
-                              $"Please visit GitHub to download the latest release.",
-                    PrimaryButtonText = "Update",
-                    CloseButtonText = "Ignore this version"
+                    Title = LocalizationService.Get("Update.Title"),
+                    Content = string.Format(
+                        LocalizationService.Get("Update.Content"), latestVersion, currentVersion),
+                    PrimaryButtonText = LocalizationService.Get("Update.Go"),
+                    CloseButtonText = LocalizationService.Get("Update.Ignore")
                 };
                 var result = await dialog.ShowDialogAsync();
 
@@ -216,8 +215,9 @@ namespace LiveCaptionsTranslator
                     }
                     catch (Exception ex)
                     {
-                        SnackbarHost.Show("[ERROR] Open Browser Failed.", ex.Message, SnackbarType.Error,
-                            timeout: 2, closeButton: true);
+                        SnackbarHost.Show(
+                            $"[ERROR] {LocalizationService.Get("Common.OpenBrowserFailed")}", ex.Message,
+                            SnackbarType.Error, timeout: 2, closeButton: true);
                     }
                 }
                 else
@@ -247,6 +247,36 @@ namespace LiveCaptionsTranslator
 
             if (IsAutoHeight && maxHeight > 0 && Height > maxHeight)
                 Height = maxHeight;
+        }
+
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            // Closing (✕/Alt+F4) hides to the tray unless disabled or exiting.
+            if (!App.IsShuttingDown && Translator.Setting.MainWindow.CloseToTray)
+            {
+                e.Cancel = true;
+                MinimizeToTray();
+                return;
+            }
+            base.OnClosing(e);
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            // Reached only when CloseToTray is off or the app is exiting.
+            if (!App.IsShuttingDown)
+                App.ExitApplication();
+        }
+
+        public void MinimizeToTray()
+        {
+            Hide();
+            if (!Translator.Setting.MainWindow.TrayHintShown)
+            {
+                Translator.Setting.MainWindow.TrayHintShown = true;
+                TrayController.ShowFirstMinimizeHint();
+            }
         }
     }
 }

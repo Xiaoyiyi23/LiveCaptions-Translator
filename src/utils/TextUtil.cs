@@ -111,5 +111,39 @@ namespace LiveCaptionsTranslator.utils
 
             return protocol + rest;
         }
+
+        // Preprocess the raw caption text recognized by LiveCaptions before segmentation.
+        public static string PreprocessCaption(string fullText)
+        {
+            fullText = RegexPatterns.Acronym().Replace(fullText, "$1$2");
+            fullText = RegexPatterns.AcronymWithWords().Replace(fullText, "$1 $2");
+            fullText = RegexPatterns.PunctuationSpace().Replace(fullText, "$1 ");
+            fullText = RegexPatterns.CJPunctuationSpace().Replace(fullText, "$1");
+            // Note: For certain languages (such as Japanese), LiveCaptions excessively uses `\n`.
+            // Replace redundant `\n` within sentences with comma or period.
+            return ReplaceNewlines(fullText, MEDIUM_THRESHOLD);
+        }
+
+        // Extract the latest (possibly incomplete) sentence of `fullText`, together with
+        // the index of its preceding end-of-sentence punctuation.
+        public static (int lastEOSIndex, string latestCaption) GetLastSentence(string fullText)
+        {
+            int lastEOSIndex;
+            if (Array.IndexOf(PUNC_EOS, fullText[^1]) != -1)
+                lastEOSIndex = fullText[0..^1].LastIndexOfAny(PUNC_EOS);
+            else
+                lastEOSIndex = fullText.LastIndexOfAny(PUNC_EOS);
+            string latestCaption = fullText.Substring(lastEOSIndex + 1);
+
+            // If the last sentence is too short, extend it by adding the previous sentence.
+            // Note: LiveCaptions may generate multiple characters including EOS at once.
+            if (lastEOSIndex > 0 && Encoding.UTF8.GetByteCount(latestCaption) < SHORT_THRESHOLD)
+            {
+                lastEOSIndex = fullText[0..lastEOSIndex].LastIndexOfAny(PUNC_EOS);
+                latestCaption = fullText.Substring(lastEOSIndex + 1);
+            }
+
+            return (lastEOSIndex, latestCaption);
+        }
     }
 }

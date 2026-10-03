@@ -6,6 +6,7 @@
     xmlns:local="clr-namespace:LiveCaptionsTranslator"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:utils="clr-namespace:LiveCaptionsTranslator.utils"
     Title="CaptionPage"
     JournalEntry.KeepAlive="True"
     mc:Ignorable="d">
@@ -36,7 +37,7 @@
                 MouseLeftButtonDown="TextBlock_MouseLeftButtonDown"
                 Style="{StaticResource CaptionBlockStyle}"
                 Text="{Binding DisplayOriginalCaption, UpdateSourceTrigger=PropertyChanged}"
-                ToolTip="Click to Copy, Ctrl+Scroll to Resize Font" />
+                ToolTip="{utils:Loc Caption.Tooltip.Main}" />
         </ui:Card>
 
         <ui:Card
@@ -54,7 +55,7 @@
                 MouseLeftButtonDown="TextBlock_MouseLeftButtonDown"
                 Style="{StaticResource CaptionBlockStyle}"
                 Text="{Binding DisplayTranslatedCaption, UpdateSourceTrigger=PropertyChanged}"
-                ToolTip="Click to Copy, Ctrl+Scroll to Resize Font" />
+                ToolTip="{utils:Loc Caption.Tooltip.Main}" />
         </ui:Card>
 
         <ui:Card
@@ -95,7 +96,7 @@
                                         MouseLeftButtonDown="TextBlock_MouseLeftButtonDown"
                                         Style="{StaticResource CaptionBlockStyle}"
                                         Text="{Binding SourceText}"
-                                        ToolTip="Click To Copy" />
+                                        ToolTip="{utils:Loc Caption.Tooltip.Log}" />
                                 </ui:Card>
                                 <ui:Card
                                     Grid.Row="1"
@@ -110,7 +111,7 @@
                                         MouseLeftButtonDown="TextBlock_MouseLeftButtonDown"
                                         Style="{StaticResource CaptionBlockStyle}"
                                         Text="{Binding TranslatedText}"
-                                        ToolTip="Click To Copy" />
+                                        ToolTip="{utils:Loc Caption.Tooltip.Log}" />
                                 </ui:Card>
                             </Grid>
                         </Border>

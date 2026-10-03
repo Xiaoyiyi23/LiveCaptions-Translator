@@ -24,6 +24,7 @@ namespace LiveCaptionsTranslator.utils
                  attemptCount++)
             {
                 window = FindWindowByPId(process.Id);
+                Thread.Sleep(50);
                 if (attemptCount > 10000)
                     throw new Exception("Failed to launch LiveCaptions!");
             }

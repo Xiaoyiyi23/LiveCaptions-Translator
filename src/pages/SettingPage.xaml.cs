@@ -13,6 +13,7 @@ namespace LiveCaptionsTranslator
     public partial class SettingPage : Page
     {
         private static SettingWindow? SettingWindow;
+        private bool languageBoxReady = false;
 
         public SettingPage()
         {
@@ -30,6 +31,19 @@ namespace LiveCaptionsTranslator
             TranslateAPIBox.SelectedIndex = 0;
 
             LoadAPISetting();
+
+            // Reflect the effective language; user changes raise SelectionChanged.
+            LanguageBox.SelectedIndex = LocalizationService.Instance.Language == "zh-CN" ? 1 : 0;
+            languageBoxReady = true;
+        }
+
+        private void LanguageBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!languageBoxReady || e.AddedItems.Count == 0)
+                return;
+            string? tag = (e.AddedItems[0] as ComboBoxItem)?.Tag as string;
+            if (!string.IsNullOrEmpty(tag))
+                Translator.Setting.Language = tag;
         }
 
         private void LiveCaptionsButton_click(object sender, RoutedEventArgs e)
@@ -44,12 +58,12 @@ namespace LiveCaptionsTranslator
             if (isHide)
             {
                 LiveCaptionsHandler.RestoreLiveCaptions(Translator.Window);
-                ButtonText.Text = "Hide";
+                ButtonText.Text = LocalizationService.Get("Settings.LiveCaptions.Hide");
             }
             else
             {
                 LiveCaptionsHandler.HideLiveCaptions(Translator.Window);
-                ButtonText.Text = "Show";
+                ButtonText.Text = LocalizationService.Get("Settings.LiveCaptions.Show");
             }
         }
 
@@ -158,7 +172,7 @@ namespace LiveCaptionsTranslator
         private void CheckForFirstUse()
         {
             if (Translator.FirstUseFlag)
-                ButtonText.Text = "Hide";
+                ButtonText.Text = LocalizationService.Get("Settings.LiveCaptions.Hide");
         }
 
         public void LoadAPISetting()

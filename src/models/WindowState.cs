@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using LiveCaptionsTranslator.Utils;
+using LiveCaptionsTranslator.utils;
 
 namespace LiveCaptionsTranslator.models
 {
@@ -13,6 +14,9 @@ namespace LiveCaptionsTranslator.models
         private bool latencyShow = false;
         private int originalFontSize = 15;
         private int translatedFontSize = 18;
+        private bool closeToTray = true;
+        private bool trayHintShown = false;
+        private bool autoStart = false;
 
         public bool Topmost
         {
@@ -60,10 +64,44 @@ namespace LiveCaptionsTranslator.models
             }
         }
 
+        // Closing the main window hides it to the tray instead of exiting.
+        public bool CloseToTray
+        {
+            get => closeToTray;
+            set
+            {
+                closeToTray = value;
+                OnPropertyChanged("CloseToTray");
+            }
+        }
+
+        // Whether the "minimized to tray" balloon hint has been shown once.
+        public bool TrayHintShown
+        {
+            get => trayHintShown;
+            set
+            {
+                trayHintShown = value;
+                OnPropertyChanged("TrayHintShown");
+            }
+        }
+
+        // Registers the app in the HKCU Run key (starts minimized to tray).
+        public bool AutoStart
+        {
+            get => autoStart;
+            set
+            {
+                autoStart = value;
+                AutoStartUtil.SetEnabled(value);
+                OnPropertyChanged("AutoStart");
+            }
+        }
+
         public void OnPropertyChanged([CallerMemberName] string propName = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
-            Translator.Setting?.Save();
+            Translator.Setting?.ScheduleSave();
         }
     }
 
@@ -137,7 +175,7 @@ namespace LiveCaptionsTranslator.models
         public void OnPropertyChanged([CallerMemberName] string propName = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
-            Translator.Setting?.Save();
+            Translator.Setting?.ScheduleSave();
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -18,6 +18,11 @@ namespace LiveCaptionsTranslator.models
         private string overlayOriginalCaption = " ";
         private string overlayCurrentTranslation = " ";
         private string overlayNoticePrefix = " ";
+
+        private int contextsVersion = 0;
+        private readonly object contextCacheLock = new();
+        private readonly Dictionary<(int Version, int Count, TextType Type), string> previousTextCache = new();
+        private readonly Dictionary<(int Version, int Count), List<TranslationHistoryEntry>> previousContextsCache = new();
 
         public string OriginalCaption { get; set; } = string.Empty;
         public string TranslatedCaption { get; set; } = string.Empty;
@@ -67,6 +72,7 @@ namespace LiveCaptionsTranslator.models
                 OnPropertyChanged("OverlayNoticePrefix");
             }
         }
+
         public string OverlayCurrentTranslation
         {
             get => overlayCurrentTranslation;
@@ -92,10 +98,28 @@ namespace LiveCaptionsTranslator.models
             return instance;
         }
 
+        // Every mutation of `Contexts` must be followed by this call, otherwise
+        // the cached context views would go stale.
+        public void InvalidateContextsCache()
+        {
+            lock (contextCacheLock)
+            {
+                contextsVersion++;
+                previousTextCache.Clear();
+                previousContextsCache.Clear();
+            }
+        }
+
         public string GetPreviousText(int count, TextType textType)
         {
             if (count <= 0 || Contexts.Count == 0)
                 return string.Empty;
+
+            lock (contextCacheLock)
+            {
+                if (previousTextCache.TryGetValue((contextsVersion, count, textType), out string? cached))
+                    return cached;
+            }
 
             var prev = Contexts
                 .Reverse().Take(count).Reverse()
@@ -121,6 +145,11 @@ namespace LiveCaptionsTranslator.models
                 prev += TextUtil.isCJChar(prev[^1]) ? "。" : ".";
             if (!string.IsNullOrEmpty(prev) && Encoding.UTF8.GetByteCount(prev[^1].ToString()) < 2)
                 prev += " ";
+
+            lock (contextCacheLock)
+            {
+                previousTextCache[(contextsVersion, count, textType)] = prev;
+            }
             return prev;
         }
 
@@ -129,11 +158,24 @@ namespace LiveCaptionsTranslator.models
             if (count <= 0 || Contexts.Count == 0)
                 return [];
 
-            return Contexts
+            lock (contextCacheLock)
+            {
+                if (previousContextsCache.TryGetValue((contextsVersion, count), out var cached))
+                    return cached;
+            }
+
+            var result = Contexts
                 .Reverse().Take(count).Reverse()
                 .Where(entry => entry != null && string.CompareOrdinal(entry.TranslatedText, "N/A") != 0 &&
                                 !entry.TranslatedText.Contains("[ERROR]") &&
-                                !entry.TranslatedText.Contains("[WARNING]"));
+                                !entry.TranslatedText.Contains("[WARNING]"))
+                .ToList();
+
+            lock (contextCacheLock)
+            {
+                previousContextsCache[(contextsVersion, count)] = result;
+            }
+            return result;
         }
 
         public void OnPropertyChanged([CallerMemberName] string propName = "")

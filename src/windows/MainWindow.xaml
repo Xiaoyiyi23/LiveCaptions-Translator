@@ -6,6 +6,7 @@
     xmlns:local="clr-namespace:LiveCaptionsTranslator"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:utils="clr-namespace:LiveCaptionsTranslator.utils"
     Title="LiveCaptions Translator"
     Width="750"
     Height="170"
@@ -45,7 +46,7 @@
                             Click="CaptionLogButton_Click"
                             Icon="{ui:SymbolIcon History16,
                                                  Filled=False}"
-                            ToolTip="Log Cards of Captions"
+                            ToolTip="{utils:Loc Main.Tooltip.LogCards}"
                             Visibility="Collapsed" />
                         <ui:Button
                             x:Name="LogOnlyButton"
@@ -54,7 +55,7 @@
                             Click="LogOnlyButton_Click"
                             Icon="{ui:SymbolIcon Pause16,
                                                  Filled=False}"
-                            ToolTip="Pause Translation (Log Only)" />
+                            ToolTip="{utils:Loc Main.Tooltip.Pause}" />
                         <ui:Button
                             x:Name="OverlayModeButton"
                             Margin="0,0,5,0"
@@ -62,7 +63,7 @@
                             Click="OverlayModeButton_Click"
                             Icon="{ui:SymbolIcon ClosedCaptionOff24,
                                                  Filled=False}"
-                            ToolTip="Overlay Window" />
+                            ToolTip="{utils:Loc Main.Tooltip.Overlay}" />
                         <ui:Button
                             x:Name="TopmostButton"
                             Margin="0,0,5,0"
@@ -70,7 +71,7 @@
                             Click="TopmostButton_Click"
                             Icon="{ui:SymbolIcon Pin16,
                                                  Filled=True}"
-                            ToolTip="Always on Top" />
+                            ToolTip="{utils:Loc Main.Tooltip.Topmost}" />
                     </StackPanel>
                 </ui:TitleBar.TrailingContent>
             </ui:TitleBar>
@@ -87,28 +88,28 @@
                 <ui:NavigationView.MenuItems>
                     <ui:NavigationViewItem
                         Margin="0,6,0,3"
-                        Content="Caption"
+                        Content="{utils:Loc Main.Nav.Caption}"
                         FontFamily="Bahnschrift"
                         Icon="{ui:SymbolIcon Home24}"
                         NavigationCacheMode="Enabled"
                         TargetPageType="{x:Type local:CaptionPage}" />
                     <ui:NavigationViewItem
                         Margin="0,3,0,0"
-                        Content="Setting"
+                        Content="{utils:Loc Main.Nav.Setting}"
                         FontFamily="Bahnschrift"
                         Icon="{ui:SymbolIcon Settings24}"
                         NavigationCacheMode="Required"
                         TargetPageType="{x:Type local:SettingPage}" />
                     <ui:NavigationViewItem
                         Margin="0,3,0,0"
-                        Content="History"
+                        Content="{utils:Loc Main.Nav.History}"
                         FontFamily="Bahnschrift"
                         Icon="{ui:SymbolIcon History24}"
                         NavigationCacheMode="Disabled"
                         TargetPageType="{x:Type local:HistoryPage}" />
                     <ui:NavigationViewItem
                         Margin="0,3,0,0"
-                        Content="Info"
+                        Content="{utils:Loc Main.Nav.Info}"
                         FontFamily="Bahnschrift"
                         Icon="{ui:SymbolIcon Info24}"
                         NavigationCacheMode="Required"

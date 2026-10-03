@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Windows.Automation;
@@ -15,7 +16,8 @@ namespace LiveCaptionsTranslator
         private static Caption? caption = null;
         private static Setting? setting = null;
 
-        private static readonly Queue<string> pendingTextQueue = new();
+        // Enqueued by `SyncLoop`, dequeued by `TranslateLoop` (different threads).
+        private static readonly ConcurrentQueue<string> pendingTextQueue = new();
         private static readonly TranslationTaskQueue translationTaskQueue = new();
 
         public static AutomationElement? Window
@@ -26,10 +28,24 @@ namespace LiveCaptionsTranslator
         public static Caption? Caption => caption;
         public static Setting? Setting => setting;
 
-        public static bool LogOnlyFlag { get; set; } = false;
-        public static bool FirstUseFlag { get; set; } = false;
+        private static bool logOnlyFlag = false;
+        private static bool firstUseFlag = false;
+
+        public static bool LogOnlyFlag
+        {
+            get => logOnlyFlag;
+            set
+            {
+                if (logOnlyFlag == value)
+                    return;
+                logOnlyFlag = value;
+                LogOnlyFlagChanged?.Invoke();
+            }
+        }
+        public static bool FirstUseFlag { get => firstUseFlag; set => firstUseFlag = value; }
 
         public static event Action? TranslationLogged;
+        public static event Action? LogOnlyFlagChanged;
 
         static Translator()
         {
@@ -72,16 +88,14 @@ namespace LiveCaptionsTranslator
                     continue;
                 }
                 if (string.IsNullOrEmpty(fullText))
+                {
+                    // Nothing is being said; wait instead of spinning on UIA calls.
+                    Thread.Sleep(100);
                     continue;
+                }
 
                 // Preprocess
-                fullText = RegexPatterns.Acronym().Replace(fullText, "$1$2");
-                fullText = RegexPatterns.AcronymWithWords().Replace(fullText, "$1 $2");
-                fullText = RegexPatterns.PunctuationSpace().Replace(fullText, "$1 ");
-                fullText = RegexPatterns.CJPunctuationSpace().Replace(fullText, "$1");
-                // Note: For certain languages (such as Japanese), LiveCaptions excessively uses `\n`.
-                // Replace redundant `\n` within sentences with comma or period.
-                fullText = TextUtil.ReplaceNewlines(fullText, TextUtil.MEDIUM_THRESHOLD);
+                fullText = TextUtil.PreprocessCaption(fullText);
 
                 // Prevent adding the last sentence from previous running to log cards
                 // before the first sentence is completed.
@@ -89,20 +103,7 @@ namespace LiveCaptionsTranslator
                     ClearContexts();
 
                 // Get the last sentence.
-                int lastEOSIndex;
-                if (Array.IndexOf(TextUtil.PUNC_EOS, fullText[^1]) != -1)
-                    lastEOSIndex = fullText[0..^1].LastIndexOfAny(TextUtil.PUNC_EOS);
-                else
-                    lastEOSIndex = fullText.LastIndexOfAny(TextUtil.PUNC_EOS);
-                string latestCaption = fullText.Substring(lastEOSIndex + 1);
-
-                // If the last sentence is too short, extend it by adding the previous sentence.
-                // Note: LiveCaptions may generate multiple characters including EOS at once.
-                if (lastEOSIndex > 0 && Encoding.UTF8.GetByteCount(latestCaption) < TextUtil.SHORT_THRESHOLD)
-                {
-                    lastEOSIndex = fullText[0..lastEOSIndex].LastIndexOfAny(TextUtil.PUNC_EOS);
-                    latestCaption = fullText.Substring(lastEOSIndex + 1);
-                }
+                var (lastEOSIndex, latestCaption) = TextUtil.GetLastSentence(fullText);
 
                 // `OverlayOriginalCaption`: The sentence to be displayed on Overlay Window.
                 Caption.OverlayOriginalCaption = latestCaption;
@@ -164,16 +165,16 @@ namespace LiveCaptionsTranslator
                 // Check LiveCaptions.exe still alive
                 if (Window == null)
                 {
-                    Caption.DisplayTranslatedCaption = "[WARNING] LiveCaptions was unexpectedly closed, restarting...";
+                    // Keep the "[WARNING]" marker literal: it is matched when filtering contexts.
+                    Caption.DisplayTranslatedCaption =
+                        "[WARNING] " + LocalizationService.Get("Caption.WarnRestart");
                     Window = LiveCaptionsHandler.LaunchLiveCaptions();
                     Caption.DisplayTranslatedCaption = "";
                 }
 
                 // Translate
-                if (pendingTextQueue.Count > 0)
+                if (pendingTextQueue.TryDequeue(out string? originalSnapshot))
                 {
-                    var originalSnapshot = pendingTextQueue.Dequeue();
-
                     if (LogOnlyFlag)
                     {
                         bool isOverwrite = await IsOverwrite(originalSnapshot);
@@ -186,7 +187,7 @@ namespace LiveCaptionsTranslator
                     }
                 }
 
-                Thread.Sleep(40);
+                await Task.Delay(40);
             }
         }
 
@@ -199,8 +200,8 @@ namespace LiveCaptionsTranslator
                 if (LogOnlyFlag)
                 {
                     Caption.TranslatedCaption = string.Empty;
-                    Caption.DisplayTranslatedCaption = "[Paused]";
-                    Caption.OverlayNoticePrefix = "[Paused]";
+                    Caption.DisplayTranslatedCaption = LocalizationService.Get("Caption.Paused");
+                    Caption.OverlayNoticePrefix = LocalizationService.Get("Caption.Paused");
                     Caption.OverlayCurrentTranslation = string.Empty;
                 }
                 else if (!string.IsNullOrEmpty(RegexPatterns.NoticePrefix().Replace(
@@ -225,8 +226,8 @@ namespace LiveCaptionsTranslator
 
                 // If the original sentence is a complete sentence, choke for better visual experience.
                 if (isChoke)
-                    Thread.Sleep(720);
-                Thread.Sleep(40);
+                    await Task.Delay(720);
+                await Task.Delay(40);
             }
         }
 
@@ -262,7 +263,8 @@ namespace LiveCaptionsTranslator
             }
             catch (Exception ex)
             {
-                return ($"[ERROR] Translation Failed: {ex.Message}", isChoke);
+                FileLogger.Error("Translation failed", ex);
+                return ($"[ERROR] " + string.Format(LocalizationService.Get("Api.ErrGeneric"), ex.Message), isChoke);
             }
 
             return (translatedText, isChoke);
@@ -295,7 +297,8 @@ namespace LiveCaptionsTranslator
             }
             catch (Exception ex)
             {
-                SnackbarHost.Show("[ERROR] Logging history failed.", ex.Message, SnackbarType.Error,
+                FileLogger.Error("Logging history failed", ex);
+                SnackbarHost.Show("[ERROR] " + LocalizationService.Get("Log.ErrLogging"), ex.Message, SnackbarType.Error,
                     timeout: 2, closeButton: true);
             }
         }
@@ -315,7 +318,8 @@ namespace LiveCaptionsTranslator
             }
             catch (Exception ex)
             {
-                SnackbarHost.Show("[ERROR] Logging history failed.", ex.Message, SnackbarType.Error,
+                FileLogger.Error("Logging history failed", ex);
+                SnackbarHost.Show("[ERROR] " + LocalizationService.Get("Log.ErrLogging"), ex.Message, SnackbarType.Error,
                     timeout: 2, closeButton: true);
             }
         }
@@ -330,6 +334,7 @@ namespace LiveCaptionsTranslator
                 Caption.Contexts.Dequeue();
             Caption?.Contexts.Enqueue(lastLog);
 
+            Caption?.InvalidateContextsCache();
             Caption?.OnPropertyChanged("DisplayLogCards");
             Caption?.OnPropertyChanged("OverlayPreviousTranslation");
         }
@@ -338,6 +343,7 @@ namespace LiveCaptionsTranslator
         {
             Caption?.Contexts.Clear();
 
+            Caption?.InvalidateContextsCache();
             Caption?.OnPropertyChanged("DisplayLogCards");
             Caption?.OnPropertyChanged("OverlayPreviousTranslation");
         }
@@ -346,7 +352,7 @@ namespace LiveCaptionsTranslator
         public static async Task<bool> IsOverwrite(string originalText, CancellationToken token = default)
         {
             string lastOriginalText = await SQLiteHistoryLogger.LoadLastSourceText(token);
-            if (lastOriginalText == null)
+            if (string.IsNullOrEmpty(lastOriginalText))
                 return false;
 
             int minLen = Math.Min(originalText.Length, lastOriginalText.Length);

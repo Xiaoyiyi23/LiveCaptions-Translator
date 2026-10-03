@@ -2,6 +2,8 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 
+using LiveCaptionsTranslator.utils;
+
 namespace LiveCaptionsTranslator.models
 {
     public class TranslateAPIConfig : INotifyPropertyChanged
@@ -35,7 +37,7 @@ namespace LiveCaptionsTranslator.models
         public void OnPropertyChanged([CallerMemberName] string propName = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
-            Translator.Setting?.Save();
+            Translator.Setting?.ScheduleSave();
         }
     }
 
@@ -141,6 +143,7 @@ namespace LiveCaptionsTranslator.models
         private string apiKey = "";
         private string apiUrl = "";
 
+        [JsonConverter(typeof(SecretJsonConverter))]
         public string ApiKey
         {
             get => apiKey;
@@ -164,6 +167,7 @@ namespace LiveCaptionsTranslator.models
     public class OpenRouterConfig : BaseLLMConfig
     {
         private string apiKey = "";
+        [JsonConverter(typeof(SecretJsonConverter))]
         public string ApiKey
         {
             get => apiKey;
@@ -219,6 +223,7 @@ namespace LiveCaptionsTranslator.models
         private string apiKey = "";
         private string apiUrl = "https://api.deepl.com/v2/translate";
 
+        [JsonConverter(typeof(SecretJsonConverter))]
         public string ApiKey
         {
             get => apiKey;
@@ -282,6 +287,7 @@ namespace LiveCaptionsTranslator.models
             }
         }
 
+        [JsonConverter(typeof(SecretJsonConverter))]
         public string AppSecret
         {
             get => appSecret;
@@ -327,6 +333,7 @@ namespace LiveCaptionsTranslator.models
         private string apiUrl = "http://localhost:8989/translate";
         private string sourceLanguage = "en";
 
+        [JsonConverter(typeof(SecretJsonConverter))]
         public string ApiKey
         {
             get => apiKey;
@@ -410,6 +417,7 @@ namespace LiveCaptionsTranslator.models
             }
         }
 
+        [JsonConverter(typeof(SecretJsonConverter))]
         public string AppSecret
         {
             get => appSecret;
@@ -454,6 +462,7 @@ namespace LiveCaptionsTranslator.models
         private string apiKey = "";
         private string apiUrl = "http://localhost:5000/translate";
 
+        [JsonConverter(typeof(SecretJsonConverter))]
         public string ApiKey
         {
             get => apiKey;

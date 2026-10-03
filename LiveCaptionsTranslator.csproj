@@ -28,10 +28,20 @@
 			<SubType>Designer</SubType>
 		</ApplicationDefinition>
 		<Content Include="src\LiveCaptions-Translator.ico" />
+
+		<!-- UI language tables, embedded so single-file publishes need no sidecar files. -->
+		<EmbeddedResource Include="src\lang\en.json" LogicalName="LiveCaptionsTranslator.lang.en.json" />
+		<EmbeddedResource Include="src\lang\zh-CN.json" LogicalName="LiveCaptionsTranslator.lang.zh-CN.json" />
+
+		<!-- The test project lives in a subfolder of this project's default source glob scope. -->
+		<Compile Remove="LiveCaptionsTranslator.Tests\**" />
+		<None Remove="LiveCaptionsTranslator.Tests\**" />
+		<Content Remove="LiveCaptionsTranslator.Tests\**" />
 		
 		<PackageReference Include="Interop.UIAutomationClient" Version="10.19041.0" />
 		
 		<PackageReference Include="CsvHelper" Version="33.0.1" />
+		<PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.1" />
 		<PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.1" />
 		<PackageReference Include="System.Net.Http" Version="4.3.4" />
 		<PackageReference Include="System.Text.Json" Version="8.0.5" />

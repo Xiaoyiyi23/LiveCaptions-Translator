@@ -59,6 +59,8 @@ Windows' built-in LiveCaptions is easy to use, uses few resources, and has extre
 
   It can automatically switches between light and dark themes 🌓 based on the system setting.
 
+  The UI is available in English and 简体中文, following your system language by default and switchable at runtime in the settings.
+
 - **🌐 Multiple Translation Services**
 
   Supports various translation engines, including 2 out-of-the-box Google Translate.
@@ -83,6 +85,10 @@ Windows' built-in LiveCaptions is easy to use, uses few resources, and has extre
 
   It's strongly recommended using **LLM-based** translation engines, as LLMs excel at handling incomplete sentences and are adept at understanding context.
 
+  > **Note:**
+  > - *Google2* uses an unofficial endpoint extracted from the Google Dictionary Chrome extension. It works out of the box but may stop working at any time.
+  > - API keys are encrypted at rest with Windows DPAPI and stored in the local `setting.json`; they need to be re-entered after switching machines.
+
 - **🪟 Overlay Window**
 
   Open a borderless, transparent overlay window to display subtitles, providing the most immersive experience. This is very useful for scenarios like gaming, videos, and live streams!
@@ -104,11 +110,17 @@ Windows' built-in LiveCaptions is easy to use, uses few resources, and has extre
 
   Supports Always-on-top window and convenient translation pause/resume, and you can copy text with a single click for quick share or saving.
 
+- **🗃️ Background Residency**
+
+  Closing the main window minimizes it to the system tray — translation, history logging, and the overlay window keep running in the background.
+
+  The tray menu offers quick access to everything: show the window, toggle the overlay, pause/resume translation, and exit. Starting with Windows (straight to the tray) and single-instance activation are supported.
+
 - **📒 History Management**
 
   Records original and translated text, perfect for meetings, lectures, and important discussions.
 
-  You can export all records as a CSV file.
+  You can export all records as a CSV file or as SRT subtitles.
 
   <div align="center">
     <img src="images/history.png" alt="Translation history" width="90%" />

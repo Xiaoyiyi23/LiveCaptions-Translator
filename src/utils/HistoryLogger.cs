@@ -154,7 +154,7 @@ namespace LiveCaptionsTranslator.utils
             }
         }
 
-        public static async Task<string> LoadLastSourceText(CancellationToken token = default)
+        public static async Task<string?> LoadLastSourceText(CancellationToken token = default)
         {
             string selectQuery = @"
                 SELECT SourceText
@@ -168,7 +168,7 @@ namespace LiveCaptionsTranslator.utils
                 if (await reader.ReadAsync(token))
                     return reader.GetString(reader.GetOrdinal("SourceText"));
                 else
-                    return string.Empty;
+                    return null;
             }
         }
 
@@ -243,6 +243,59 @@ namespace LiveCaptionsTranslator.utils
             using var writer = new StreamWriter(filePath, false, new UTF8Encoding(true));
             using var csvWriter = new CsvWriter(writer, CultureInfo.InvariantCulture);
             await csvWriter.WriteRecordsAsync(history, token);
+        }
+
+        public static async Task ExportToSRT(string filePath, CancellationToken token = default)
+        {
+            var entries = new List<(DateTime Time, string Text)>();
+            using (var command = new SqliteCommand(@"
+                SELECT Timestamp, SourceText, TranslatedText
+                FROM TranslationHistory
+                ORDER BY Timestamp ASC, Id ASC", GetConnection()))
+            using (var reader = await command.ExecuteReaderAsync(token))
+            {
+                while (await reader.ReadAsync(token))
+                {
+                    try
+                    {
+                        entries.Add((
+                            DateTimeOffset.FromUnixTimeSeconds((long)Convert.ToDouble(
+                                reader.GetString(reader.GetOrdinal("Timestamp")))).LocalDateTime,
+                            CombineSRTEntry(
+                                reader.GetString(reader.GetOrdinal("SourceText")),
+                                reader.GetString(reader.GetOrdinal("TranslatedText")))));
+                    }
+                    catch (FormatException)
+                    {
+                        // Skip rows written by the deprecated timestamp format.
+                    }
+                }
+            }
+
+            using var writer = new StreamWriter(filePath, false, new UTF8Encoding(true));
+            for (int i = 0; i < entries.Count; i++)
+            {
+                var start = entries[i].Time;
+                // Show each entry until the next one appears (capped) so subtitles stay readable.
+                var end = i + 1 < entries.Count
+                    ? (entries[i + 1].Time > start.AddSeconds(5) ? start.AddSeconds(5) : entries[i + 1].Time)
+                    : start.AddSeconds(3);
+                if (end <= start)
+                    end = start.AddSeconds(1);
+
+                await writer.WriteLineAsync((i + 1).ToString());
+                await writer.WriteLineAsync($"{start:HH:mm:ss,fff} --> {end:HH:mm:ss,fff}");
+                await writer.WriteLineAsync(entries[i].Text);
+                await writer.WriteLineAsync();
+            }
+        }
+
+        private static string CombineSRTEntry(string sourceText, string translatedText)
+        {
+            sourceText = sourceText.Replace("\n", " ").Trim();
+            if (string.IsNullOrEmpty(translatedText) || translatedText == "N/A")
+                return sourceText;
+            return $"{sourceText}\n{translatedText.Replace("\n", " ").Trim()}";
         }
 
         // DEPRECATED

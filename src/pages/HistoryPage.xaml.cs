@@ -69,13 +69,13 @@ namespace LiveCaptionsTranslator
             {
                 Title = new TextBlock
                 {
-                    Text = "Do you want to delete all history?",
+                    Text = LocalizationService.Get("History.Delete.Title"),
                     FontSize = 18,
                     FontWeight = FontWeights.Regular
                 },
-                Content = "This operation cannot be undone!",
-                PrimaryButtonText = "Yes",
-                CloseButtonText = "No",
+                Content = LocalizationService.Get("History.Delete.Content"),
+                PrimaryButtonText = LocalizationService.Get("Common.Yes"),
+                CloseButtonText = LocalizationService.Get("Common.No"),
                 DefaultButton = ContentDialogButton.Close,
                 DialogHost = dialogHostContainer,
                 Padding = new Thickness(8, 4, 8, 8),
@@ -127,11 +127,40 @@ namespace LiveCaptionsTranslator
                 try
                 {
                     await SQLiteHistoryLogger.ExportToCSV(saveFileDialog.FileName);
-                    SnackbarHost.Show("Saved Success.", $"File saved to: {saveFileDialog.FileName}", SnackbarType.Success);
+                    SnackbarHost.Show(LocalizationService.Get("Common.SavedTitle"),
+                        string.Format(LocalizationService.Get("Common.SavedTo"), saveFileDialog.FileName), SnackbarType.Success);
                 }
                 catch (Exception ex)
                 {
-                    SnackbarHost.Show("Save Failed.", $"File saved faild:{ex.Message}", SnackbarType.Error);
+                    SnackbarHost.Show(LocalizationService.Get("Common.SaveFailedTitle"),
+                        string.Format(LocalizationService.Get("Common.SaveFailed"), ex.Message), SnackbarType.Error);
+                }
+            }
+        }
+
+        private async void ExportSRT_click(object sender, RoutedEventArgs e)
+        {
+            SaveFileDialog saveFileDialog = new SaveFileDialog
+            {
+                Filter = "SubRip Text (*.srt)|*.srt|All file (*.*)|*.*",
+                DefaultExt = ".srt",
+                FileName = $"exported_{DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss")}.srt",
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+            };
+
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    await SQLiteHistoryLogger.ExportToSRT(saveFileDialog.FileName);
+                    SnackbarHost.Show(LocalizationService.Get("Common.SavedTitle"),
+                        string.Format(LocalizationService.Get("Common.SavedTo"), saveFileDialog.FileName), SnackbarType.Success);
+                }
+                catch (Exception ex)
+                {
+                    FileLogger.Error("SRT export failed", ex);
+                    SnackbarHost.Show(LocalizationService.Get("Common.SaveFailedTitle"),
+                        string.Format(LocalizationService.Get("Common.SaveFailed"), ex.Message), SnackbarType.Error);
                 }
             }
         }

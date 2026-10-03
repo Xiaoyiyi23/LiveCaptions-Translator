@@ -2,6 +2,7 @@
 using System.Windows.Controls;
 using System.Windows.Input;
 
+using LiveCaptionsTranslator.utils;
 using LiveCaptionsTranslator.Utils;
 
 namespace LiveCaptionsTranslator
@@ -40,11 +41,11 @@ namespace LiveCaptionsTranslator
                 try
                 {
                     Clipboard.SetText(textBlock.Text);
-                    SnackbarHost.Show("Copied.", textBlock.Text, SnackbarType.Info, 100);
+                    SnackbarHost.Show(LocalizationService.Get("Common.Copied"), textBlock.Text, SnackbarType.Info, 100);
                 }
                 catch
                 {
-                    SnackbarHost.Show("Copy Failed.", string.Empty, SnackbarType.Error, 100);
+                    SnackbarHost.Show(LocalizationService.Get("Common.CopyFailed"), string.Empty, SnackbarType.Error, 100);
                 }
                 await Task.Delay(500);
             }

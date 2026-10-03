@@ -6,6 +6,7 @@
     xmlns:local="clr-namespace:LiveCaptionsTranslator"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:utils="clr-namespace:LiveCaptionsTranslator.utils"
     Title="HistoryPage"
     HorizontalAlignment="Left"
     VerticalAlignment="Top"
@@ -35,7 +36,7 @@
                     Icon="{ui:SymbolIcon chevronLeft12,
                                          Filled=False}"
                     MouseOverBackground="#07000000"
-                    ToolTip="Previous " />
+                    ToolTip="{utils:Loc History.Tooltip.PrevPage}" />
 
                 <ui:TextBlock
                     x:Name="PageNumber"
@@ -51,7 +52,7 @@
                     Icon="{ui:SymbolIcon chevronRight12,
                                          Filled=False}"
                     MouseOverBackground="#07000000"
-                    ToolTip="Next Page" />
+                    ToolTip="{utils:Loc History.Tooltip.NextPage}" />
 
                 <ComboBox
                     x:Name="HistoryMaxRow"
@@ -60,10 +61,10 @@
                     Padding="10,4,10,7"
                     VerticalAlignment="Stretch"
                     SelectedIndex="1">
-                    <ComboBoxItem Content="20/page" Tag="20" />
-                    <ComboBoxItem Content="30/page" Tag="30" />
-                    <ComboBoxItem Content="50/page" Tag="50" />
-                    <ComboBoxItem Content="100/page" Tag="100" />
+                    <ComboBoxItem Content="{utils:Loc History.PageSize20}" Tag="20" />
+                    <ComboBoxItem Content="{utils:Loc History.PageSize30}" Tag="30" />
+                    <ComboBoxItem Content="{utils:Loc History.PageSize50}" Tag="50" />
+                    <ComboBoxItem Content="{utils:Loc History.PageSize100}" Tag="100" />
                 </ComboBox>
 
                 <ui:AutoSuggestBox
@@ -71,7 +72,7 @@
                     MinWidth="200"
                     MaxWidth="200"
                     Margin="5,0,0,0"
-                    PlaceholderText="Search"
+                    PlaceholderText="{utils:Loc History.Search}"
                     QuerySubmitted="HistorySearchBox_QuerySubmitted"
                     TextChanged="HistorySearchBox_TextChanged" />
 
@@ -92,7 +93,17 @@
                     Icon="{ui:SymbolIcon ArrowDown12,
                                          Filled=False}"
                     MouseOverBackground="#07000000"
-                    ToolTip="Export" />
+                    ToolTip="{utils:Loc History.Tooltip.ExportCSV}" />
+                <ui:Button
+                    x:Name="ExportSRT"
+                    Margin="5,0,0,0"
+                    HorizontalAlignment="Right"
+                    Appearance="Transparent"
+                    Click="ExportSRT_click"
+                    Icon="{ui:SymbolIcon ClosedCaption24,
+                                         Filled=False}"
+                    MouseOverBackground="#07000000"
+                    ToolTip="{utils:Loc History.Tooltip.ExportSRT}" />
                 <ui:Button
                     x:Name="Delete"
                     Margin="5,0,0,0"
@@ -102,7 +113,7 @@
                     Icon="{ui:SymbolIcon Delete12,
                                          Filled=False}"
                     MouseOverBackground="#07000000"
-                    ToolTip="Delete All" />
+                    ToolTip="{utils:Loc History.Tooltip.DeleteAll}" />
 
                 <ui:Button
                     x:Name="Refresh"
@@ -113,7 +124,7 @@
                     Icon="{ui:SymbolIcon ArrowClockwise12,
                                          Filled=False}"
                     MouseOverBackground="#07000000"
-                    ToolTip="Refresh" />
+                    ToolTip="{utils:Loc History.Tooltip.Refresh}" />
             </StackPanel>
         </Grid>
 
@@ -148,7 +159,7 @@
                 </LinearGradientBrush>
             </DataGrid.BorderBrush>
             <DataGrid.Columns>
-                <DataGridTemplateColumn Width="0.4*" Header="Time">
+                <DataGridTemplateColumn Width="0.4*" Header="{utils:Loc History.Col.Time}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock
@@ -159,7 +170,7 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
-                <DataGridTemplateColumn Width="*" Header="Caption">
+                <DataGridTemplateColumn Width="*" Header="{utils:Loc History.Col.Caption}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding SourceText}" TextWrapping="Wrap" />
@@ -167,7 +178,7 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
-                <DataGridTemplateColumn Width="*" Header="Translated">
+                <DataGridTemplateColumn Width="*" Header="{utils:Loc History.Col.Translated}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding TranslatedText}" TextWrapping="Wrap" />

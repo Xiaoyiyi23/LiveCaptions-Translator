@@ -3,15 +3,22 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Windows;
 
 using LiveCaptionsTranslator.apis;
+using LiveCaptionsTranslator.utils;
 
 namespace LiveCaptionsTranslator.models
 {
     public class Setting : INotifyPropertyChanged
     {
         public static readonly string FILENAME = "setting.json";
+
+        private const int SAVE_DEBOUNCE_MS = 500;
+        private static readonly object _fileSaveLock = new();
+        private readonly object _scheduleLock = new();
+        private Timer? _saveDebounceTimer;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -24,6 +31,7 @@ namespace LiveCaptionsTranslator.models
         private string apiName;
         private string targetLanguage;
         private string prompt;
+        private string? language;
         private string? ignoredUpdateVersion;
 
         private MainWindowState mainWindowState;
@@ -105,6 +113,18 @@ namespace LiveCaptionsTranslator.models
             {
                 ignoredUpdateVersion = value;
                 OnPropertyChanged("IgnoredUpdateVersion");
+            }
+        }
+
+        // Null means "follow the system UI language".
+        public string? Language
+        {
+            get => language;
+            set
+            {
+                language = value;
+                OnPropertyChanged("Language");
+                LocalizationService.Instance.ApplyLanguage(value);
             }
         }
 
@@ -230,7 +250,7 @@ namespace LiveCaptionsTranslator.models
             catch (JsonException)
             {
                 string backupPath = jsonPath + ".bak";
-                File.Move(jsonPath, backupPath);
+                File.Move(jsonPath, backupPath, overwrite: true);
                 return Load(jsonPath);
             }
         }
@@ -279,7 +299,30 @@ namespace LiveCaptionsTranslator.models
 
         public void Save()
         {
-            Save(FILENAME);
+            // All writes go through one lock: concurrent savers (debounce timer,
+            // UI events, process exit) would otherwise corrupt setting.json.
+            lock (_fileSaveLock)
+            {
+                try
+                {
+                    Save(FILENAME);
+                }
+                catch (Exception ex)
+                {
+                    FileLogger.Error("Failed to save setting.json", ex);
+                }
+            }
+        }
+
+        // Coalesce bursts of changes (window drags, rapid property updates)
+        // into a single disk write shortly after the last change.
+        public void ScheduleSave()
+        {
+            lock (_scheduleLock)
+            {
+                _saveDebounceTimer ??= new Timer(_ => Save());
+                _saveDebounceTimer.Change(SAVE_DEBOUNCE_MS, Timeout.Infinite);
+            }
         }
 
         public void Save(string jsonPath)
@@ -298,7 +341,7 @@ namespace LiveCaptionsTranslator.models
         public void OnPropertyChanged([CallerMemberName] string? propName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
-            Translator.Setting?.Save();
+            ScheduleSave();
         }
 
         public static bool IsConfigExist()

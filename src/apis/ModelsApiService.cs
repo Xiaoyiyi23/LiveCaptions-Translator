@@ -5,7 +5,8 @@ using LiveCaptionsTranslator.utils;
 namespace LiveCaptionsTranslator.apis
 {
     /// <summary>
-    /// Servicio para obtener listas de modelos desde APIs compatibles (LMStudio, Ollama, etc.)
+    /// Service for fetching model lists from APIs that expose a models endpoint
+    /// (LMStudio, Ollama, etc.).
     /// </summary>
     public static class ModelsApiService
     {
@@ -15,7 +16,7 @@ namespace LiveCaptionsTranslator.apis
         };
 
         /// <summary>
-        /// APIs que soportan obtener modelos desde un endpoint.
+        /// APIs that support fetching models from an endpoint.
         /// </summary>
         public static readonly List<string> APIs_WITH_MODELS_ENDPOINT = new()
         {
@@ -24,7 +25,7 @@ namespace LiveCaptionsTranslator.apis
         };
 
         /// <summary>
-        /// Obtiene la URL del endpoint de modelos para una API.
+        /// Gets the models endpoint URL for an API.
         /// </summary>
         public static string GetModelsEndpoint(string apiName, string baseUrl)
         {
@@ -37,11 +38,11 @@ namespace LiveCaptionsTranslator.apis
         }
 
         /// <summary>
-        /// Obtiene la lista de modelos disponibles desde la API.
+        /// Gets the list of available models from the API.
         /// </summary>
-        /// <param name="apiName">Nombre de la API (LMStudio, Ollama, etc.)</param>
-        /// <param name="baseUrl">URL base de la API</param>
-        /// <returns>Lista de identificadores de modelos para usar en el chat</returns>
+        /// <param name="apiName">API name (LMStudio, Ollama, etc.)</param>
+        /// <param name="baseUrl">Base URL of the API</param>
+        /// <returns>List of model identifiers usable in chat, or an empty list on failure.</returns>
         public static async Task<List<ModelInfo>> FetchModelsAsync(string apiName, string baseUrl, CancellationToken token = default)
         {
             string endpoint = GetModelsEndpoint(apiName, baseUrl);
@@ -52,7 +53,10 @@ namespace LiveCaptionsTranslator.apis
             {
                 var response = await client.GetAsync(endpoint, token);
                 if (!response.IsSuccessStatusCode)
+                {
+                    FileLogger.Warn($"Failed to fetch models from {endpoint}: HTTP {(int)response.StatusCode}");
                     return new List<ModelInfo>();
+                }
 
                 string json = await response.Content.ReadAsStringAsync(token);
 
@@ -63,8 +67,13 @@ namespace LiveCaptionsTranslator.apis
                     _ => new List<ModelInfo>()
                 };
             }
-            catch
+            catch (OperationCanceledException)
             {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.Warn($"Failed to fetch models from {endpoint}: {ex.Message}");
                 return new List<ModelInfo>();
             }
         }
@@ -101,7 +110,10 @@ namespace LiveCaptionsTranslator.apis
                     result.Add(new ModelInfo { Id = key, DisplayName = displayName ?? key });
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                FileLogger.Warn($"Failed to parse LMStudio models response: {ex.Message}");
+            }
 
             return result;
         }
@@ -126,7 +138,10 @@ namespace LiveCaptionsTranslator.apis
                     result.Add(new ModelInfo { Id = name, DisplayName = name });
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                FileLogger.Warn($"Failed to parse Ollama models response: {ex.Message}");
+            }
 
             return result;
         }

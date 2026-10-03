@@ -142,7 +142,8 @@ namespace LiveCaptionsTranslator
 
         private void TranslatedChanged(object sender, PropertyChangedEventArgs e)
         {
-            ApplyFontSize();
+            // `Caption` changes are raised on worker threads; marshal to the UI thread.
+            Dispatcher.BeginInvoke(new Action(ApplyFontSize), DispatcherPriority.Background);
         }
 
         private void Window_MouseEnter(object sender, MouseEventArgs e)
@@ -337,11 +338,8 @@ namespace LiveCaptionsTranslator
 
         public void ApplyFontSize()
         {
-            Dispatcher.BeginInvoke(new Action(() =>
-            {
-                OriginalCaption.FontSize = Translator.Setting.OverlayWindow.FontSize;
-                TranslatedCaption.FontSize = (int)(OriginalCaption.FontSize * 1.25);
-            }), DispatcherPriority.Background);
+            OriginalCaption.FontSize = Translator.Setting.OverlayWindow.FontSize;
+            TranslatedCaption.FontSize = (int)(OriginalCaption.FontSize * 1.25);
         }
 
         public void ApplyFontStroke()
