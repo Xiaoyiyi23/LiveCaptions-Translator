@@ -49,15 +49,25 @@ namespace LiveCaptionsTranslator
 
         static Translator()
         {
-            window = LiveCaptionsHandler.LaunchLiveCaptions();
-            LiveCaptionsHandler.FixLiveCaptions(Window);
-            LiveCaptionsHandler.HideLiveCaptions(Window);
-
+            // Side-effect-free initialization only: touching `Translator.Setting`
+            // (e.g. from unit tests on machines without LiveCaptions) must never
+            // spawn or kill processes. The LiveCaptions window is launched
+            // explicitly at startup via `EnsureLiveCaptions`.
             if (!File.Exists(Path.Combine(Directory.GetCurrentDirectory(), models.Setting.FILENAME)))
                 FirstUseFlag = true;
 
             caption = Caption.GetInstance();
             setting = Setting.Load();
+        }
+
+        // Launches (and hides) the system LiveCaptions window. Idempotent.
+        public static void EnsureLiveCaptions()
+        {
+            if (window != null)
+                return;
+            window = LiveCaptionsHandler.LaunchLiveCaptions();
+            LiveCaptionsHandler.FixLiveCaptions(Window);
+            LiveCaptionsHandler.HideLiveCaptions(Window);
         }
 
         public static void SyncLoop()

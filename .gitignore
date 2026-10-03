@@ -365,3 +365,6 @@ FodyWeavers.xsd
 .idea/
 # Runtime log files
 logs/
+
+# ZCode session files
+.zcode/

@@ -6,6 +6,9 @@ namespace LiveCaptionsTranslator.Tests
 {
     // Kept in a single class: these tests mutate the shared singleton and
     // xUnit runs tests of one class sequentially.
+    // Same collection as SettingPersistenceTests: both mutate the shared
+    // LocalizationService singleton, so they must not run in parallel.
+    [Collection("Localization")]
     public class LocalizationServiceTests
     {
         [Fact]

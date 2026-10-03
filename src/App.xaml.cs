@@ -40,6 +40,7 @@ namespace LiveCaptionsTranslator
             // First (only) instance: initialize global state and background loops.
             // Resolves to the saved language, or the system UI language.
             LocalizationService.Instance.ApplyLanguage(Translator.Setting?.Language);
+            Translator.EnsureLiveCaptions();
             Task.Run(() => Translator.SyncLoop());
             Task.Run(() => Translator.TranslateLoop());
             Task.Run(() => Translator.DisplayLoop());
