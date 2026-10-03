@@ -49,6 +49,10 @@ namespace LiveCaptionsTranslator.apis
         {
             Timeout = TimeSpan.FromSeconds(8)
         };
+
+        // Index of the request format that last worked; guarded because
+        // concurrent translations read and update it.
+        private static readonly object openaiFallbackLock = new();
         private static int openai_fallback_index = 0;
 
         /*
@@ -183,7 +187,12 @@ namespace LiveCaptionsTranslator.apis
             HttpResponseMessage? response = null;
             while (true)
             {
-                string jsonContent = SerializeRequest(LLMRequestDataFactory.Create(openai_fallback_index,
+                int fallbackIndex;
+                lock (openaiFallbackLock)
+                {
+                    fallbackIndex = openai_fallback_index;
+                }
+                string jsonContent = SerializeRequest(LLMRequestDataFactory.Create(fallbackIndex,
                     config.ModelName, messages, config.Temperature));
                 using var request = BuildJsonRequest(HttpMethod.Post, config.ApiUrl, jsonContent);
                 request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {config.ApiKey}");
@@ -202,12 +211,20 @@ namespace LiveCaptionsTranslator.apis
                 // reject unknown fields with 400/422.
                 await Task.Delay(15, token);
 
-                openai_fallback_index++;
-                if (openai_fallback_index >= LLMRequestDataFactory.FallbackCount)
+                bool exhausted;
+                lock (openaiFallbackLock)
                 {
-                    openai_fallback_index = 0;
-                    break;
+                    openai_fallback_index = fallbackIndex + 1;
+                    if (openai_fallback_index >= LLMRequestDataFactory.FallbackCount)
+                    {
+                        openai_fallback_index = 0;
+                        exhausted = true;
+                    }
+                    else
+                        exhausted = false;
                 }
+                if (exhausted)
+                    break;
             }
 
             return await ReadAndParseResponse(response!, body =>

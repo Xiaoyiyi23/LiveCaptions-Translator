@@ -1,17 +1,33 @@
-﻿namespace LiveCaptionsTranslator.models
+namespace LiveCaptionsTranslator.models
 {
     public class TranslationTaskQueue
     {
         private readonly object _lock = new object();
         private readonly List<TranslationTask> tasks;
 
-        private (string translatedText, bool isChoke) output;
-        public (string translatedText, bool isChoke) Output => output;
+        private sealed class OutputState
+        {
+            public static readonly OutputState Empty = new(string.Empty, false);
+
+            public OutputState(string translatedText, bool isChoke)
+            {
+                TranslatedText = translatedText;
+                IsChoke = isChoke;
+            }
+
+            public string TranslatedText { get; }
+            public bool IsChoke { get; }
+        }
+
+        // Written by task continuations and read by the display loop on other
+        // threads; the volatile reference guarantees the latest result is visible.
+        private volatile OutputState output = OutputState.Empty;
+        public (string translatedText, bool isChoke) Output =>
+            (output.TranslatedText, output.IsChoke);
 
         public TranslationTaskQueue()
         {
             tasks = new List<TranslationTask>();
-            output = (string.Empty, false);
         }
 
         public void Enqueue(Func<CancellationToken, Task<(string, bool)>> worker, string originalText)
@@ -39,8 +55,9 @@
                     tasks.RemoveAt(i);
             }
 
-            output = translationTask.Task.Result;
-            var translatedText = output.Item1;
+            var result = translationTask.Task.Result;
+            output = new OutputState(result.Item1, result.Item2);
+            var translatedText = output.TranslatedText;
 
             // Log after translation.
             bool isOverwrite = await Translator.IsOverwrite(translationTask.OriginalText);
