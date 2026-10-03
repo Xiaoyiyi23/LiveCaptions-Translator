@@ -1,9 +1,16 @@
 namespace LiveCaptionsTranslator.models
 {
+    /// <summary>
+    /// Schedules translations with a "latest wins" policy: when any task
+    /// completes, all still-pending earlier tasks are cancelled. Completion
+    /// handling is injected so the queue can be tested without the app's
+    /// static dependencies.
+    /// </summary>
     public class TranslationTaskQueue
     {
         private readonly object _lock = new object();
         private readonly List<TranslationTask> tasks;
+        private readonly Func<TranslationTask, Task> onCompletedAsync;
 
         private sealed class OutputState
         {
@@ -25,9 +32,10 @@ namespace LiveCaptionsTranslator.models
         public (string translatedText, bool isChoke) Output =>
             (output.TranslatedText, output.IsChoke);
 
-        public TranslationTaskQueue()
+        public TranslationTaskQueue(Func<TranslationTask, Task> onCompletedAsync)
         {
             tasks = new List<TranslationTask>();
+            this.onCompletedAsync = onCompletedAsync;
         }
 
         public void Enqueue(Func<CancellationToken, Task<(string, bool)>> worker, string originalText)
@@ -57,13 +65,8 @@ namespace LiveCaptionsTranslator.models
 
             var result = translationTask.Task.Result;
             output = new OutputState(result.Item1, result.Item2);
-            var translatedText = output.TranslatedText;
 
-            // Log after translation.
-            bool isOverwrite = await Translator.IsOverwrite(translationTask.OriginalText);
-            if (!isOverwrite)
-                await Translator.AddContexts();
-            await Translator.Log(translationTask.OriginalText, translatedText, isOverwrite);
+            await onCompletedAsync(translationTask);
         }
     }
 
