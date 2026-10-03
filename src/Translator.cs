@@ -79,14 +79,39 @@ namespace LiveCaptionsTranslator
         // --- Loop shells: timing and LiveCaptions lifecycle only; all pipeline
         //     logic lives in the engine so it can be unit-tested. ---
 
+        // Event-driven caption capture pushes text into the engine the moment
+        // LiveCaptions updates it (idle CPU ~0, lower latency); a 500ms watchdog
+        // poll falls back to the 25ms polling path if events never arrive.
+        // Flip to true only after Win11 regression: caption continuity, fallback,
+        // CPU idle comparison, clean exit with no leftover subscriptions.
+        private const bool EnableEventDrivenCapture = false;
+
         public static void SyncLoop()
         {
+            bool eventDriven = EnableEventDrivenCapture;
+            bool subscribed = false;
+
+            // Watchdog state: if polling keeps seeing text while the event count
+            // does not move, events are not firing for this LiveCaptions build —
+            // degrade to pure polling for the rest of the session.
+            long eventsAtSubscribe = 0;
+            int pollSawText = 0;
+
             while (true)
             {
                 if (window == null)
                 {
                     Thread.Sleep(2000);
                     continue;
+                }
+
+                if (eventDriven && !subscribed)
+                {
+                    subscribed = LiveCaptionsHandler.SubscribeCaptions(window, engine.ProcessCaptions);
+                    eventsAtSubscribe = LiveCaptionsHandler.CaptionsEventCount;
+                    pollSawText = 0;
+                    if (!subscribed)
+                        eventDriven = false;
                 }
 
                 string fullText = string.Empty;
@@ -101,8 +126,30 @@ namespace LiveCaptionsTranslator
                 catch (ElementNotAvailableException)
                 {
                     window = null;
+                    LiveCaptionsHandler.UnsubscribeCaptions();
+                    subscribed = false;
                     continue;
                 }
+
+                if (eventDriven)
+                {
+                    // Watchdog: verify events are actually flowing while text is visible.
+                    if (!string.IsNullOrEmpty(fullText))
+                    {
+                        pollSawText++;
+                        if (pollSawText >= 10 &&  // ~5s of visible text at 500ms cadence
+                            LiveCaptionsHandler.CaptionsEventCount == eventsAtSubscribe)
+                        {
+                            FileLogger.Warn("Caption events not observed; falling back to polling.");
+                            LiveCaptionsHandler.UnsubscribeCaptions();
+                            eventDriven = false;
+                            subscribed = false;
+                        }
+                    }
+                    Thread.Sleep(500);
+                    continue;
+                }
+
                 if (string.IsNullOrEmpty(fullText))
                 {
                     // Nothing is being said; wait instead of spinning on UIA calls.

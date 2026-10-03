@@ -100,6 +100,7 @@ namespace LiveCaptionsTranslator
             // Flush any debounced setting changes before the process goes away.
             Translator.Setting?.Save();
             TrayController.Dispose();
+            LiveCaptionsHandler.UnsubscribeCaptions();
             if (Translator.Window != null)
             {
                 LiveCaptionsHandler.RestoreLiveCaptions(Translator.Window);

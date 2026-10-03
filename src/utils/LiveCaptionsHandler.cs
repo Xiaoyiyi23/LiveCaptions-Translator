@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Threading;
 using System.Windows.Automation;
 
 using LiveCaptionsTranslator.apis;
@@ -10,6 +11,12 @@ namespace LiveCaptionsTranslator.utils
         public static readonly string PROCESS_NAME = "LiveCaptions";
 
         private static AutomationElement? captionsTextBlock = null;
+
+        private static AutomationElement? captionsEventElement = null;
+        private static AutomationPropertyChangedEventHandler? captionsEventHandler = null;
+        private static long captionsEventCount = 0;
+
+        public static long CaptionsEventCount => Interlocked.Read(ref captionsEventCount);
 
         public static AutomationElement LaunchLiveCaptions()
         {
@@ -95,6 +102,58 @@ namespace LiveCaptionsTranslator.utils
                 captionsTextBlock = null;
                 throw;
             }
+        }
+
+        // Subscribes to caption-text changes so the pipeline can react to speech
+        // the moment LiveCaptions updates it, instead of polling UI Automation.
+        // Returns false when the element cannot be subscribed (the caller then
+        // falls back to polling).
+        public static bool SubscribeCaptions(AutomationElement window, Action<string> onCaptionsChanged)
+        {
+            UnsubscribeCaptions();
+            try
+            {
+                var textBlock = FindElementByAId(window, "CaptionsTextBlock");
+                if (textBlock == null)
+                    return false;
+
+                captionsEventHandler = (sender, e) =>
+                {
+                    if (e.Property != AutomationElement.NameProperty || e.NewValue is not string text)
+                        return;
+                    Interlocked.Increment(ref captionsEventCount);
+                    if (!string.IsNullOrEmpty(text))
+                        onCaptionsChanged(text);
+                };
+                Automation.AddAutomationPropertyChangedEventHandler(
+                    textBlock, TreeScope.Element, captionsEventHandler, AutomationElement.NameProperty);
+                captionsEventElement = textBlock;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.Warn($"Failed to subscribe to caption events: {ex.Message}");
+                UnsubscribeCaptions();
+                return false;
+            }
+        }
+
+        public static void UnsubscribeCaptions()
+        {
+            if (captionsEventHandler != null && captionsEventElement != null)
+            {
+                try
+                {
+                    Automation.RemoveAutomationPropertyChangedEventHandler(
+                        captionsEventElement, captionsEventHandler);
+                }
+                catch (Exception ex)
+                {
+                    FileLogger.Warn($"Failed to unsubscribe caption events: {ex.Message}");
+                }
+            }
+            captionsEventHandler = null;
+            captionsEventElement = null;
         }
 
         private static AutomationElement FindWindowByPId(int processId)
